@@ -75,7 +75,7 @@ matches_c2n <- merge(
 )
 
 matches_c2n[, age_diff := abs(age_at_acquisition_plasma_c2n - age_ref)]
-matches_c2n <- matches_c2n[age_diff < 0.5]
+matches_c2n <- matches_c2n[age_diff < 1]
 matches_c2n <- matches_c2n[order(age_diff), .SD[1], by = row_id]
 
 cols_noves_c2n <- grep("_plasma_c2n$", names(matches_c2n), value = TRUE)
@@ -93,7 +93,7 @@ matches_ivd2 <- merge(
 )
 
 matches_ivd2[, age_diff := abs(age_at_acquisition_csf_ivd2 - age_ref)]
-matches_ivd2 <- matches_ivd2[age_diff < 0.5]
+matches_ivd2 <- matches_ivd2[age_diff < 1]
 matches_ivd2 <- matches_ivd2[order(age_diff), .SD[1], by = row_id]
 
 cols_noves_ivd2 <- grep("_csf_ivd2$", names(matches_ivd2), value = TRUE)
@@ -111,7 +111,7 @@ matches_ntk1 <- merge(
 )
 
 matches_ntk1[, age_diff := abs(shareable_age_at_appointment_csf_ntk1 - age_ref)]
-matches_ntk1 <- matches_ntk1[age_diff < 0.5]
+matches_ntk1 <- matches_ntk1[age_diff < 1]
 matches_ntk1 <- matches_ntk1[order(age_diff), .SD[1], by = row_id]
 
 cols_noves_ntk1 <- grep("_csf_ntk1$", names(matches_ntk1), value = TRUE)

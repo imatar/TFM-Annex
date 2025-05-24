@@ -66,7 +66,7 @@ matches_bio <- merge(
 )
 
 matches_bio[, age_diff := abs(age_bio - age_ref)]
-matches_bio <- matches_bio[age_diff < 0.5]
+matches_bio <- matches_bio[age_diff < 1]
 matches_bio <- matches_bio[order(age_diff), .SD[1], by = row_id]
 
 WRAP_Imaging_merged <- merge(merged_5, matches_bio, by = "row_id", all.x = TRUE)

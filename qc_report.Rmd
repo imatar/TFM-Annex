@@ -1,0 +1,354 @@
+---
+title: "Informe de Qualitat de Dades"
+author: "XXX"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+# Configuració inicial
+knitr::opts_chunk$set(echo = TRUE)
+
+# Càrrega de llibreries
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+library(kableExtra)
+
+# Carregar dades
+df <- read.csv("path/dataset_final.csv")
+df[df == ""] <- NA
+names(df)
+
+cols_miss <- c(
+  "Subj_id", "Treatment", "Visit", "Total_visits",
+  "Cohort", "Cohort_detail", "Age_at_visit", "Age_bl", "Gender", "Sex",
+  "Ethnicity", "Race", "Education", "DX", "DX_detail", "DX_Dementia_type", "DX_bl", "APOE",
+  "CSF_AB42", "CSF_pTau", "CSF_tTau", "CSF_NfL",
+  "Plasma_NfL", "Plasma_pTau_Simoa", "Plasma_pTau_Roche",
+  "MRI_hippo_vol_total", "Total_ICV", "Hippo_normalized_icv",
+  "PET_amyloid_suvr", "PET_amyloid_centiloid",
+  "PET_FDG", "PET_tau_Bk12", "PET_tau_Bk34", "PET_tau_Bk56",
+  "MMSE", "CDR"
+)
+
+df_miss <- df[, cols_miss]
+
+
+# Funcions auxiliars
+# Resum de valors perduts
+missing_summary <- function(df) {
+  tibble(
+    Variable = names(df),
+    N_missing = sapply(df, function(x) sum(is.na(x))),
+    Perc_missing = round(sapply(df, function(x) mean(is.na(x))) * 100, 2)
+  )
+}
+
+# Gràfiques
+plot_pie_labels <- function(df, var) {
+  df %>%
+    filter(!is.na(.data[[var]])) %>%
+    count(!!sym(var)) %>%
+    mutate(perc = round(100 * n / sum(n), 1),
+           label = paste0(perc, "%")) %>%
+    ggplot(aes(x = "", y = n, fill = !!sym(var))) +
+    geom_bar(stat = "identity", width = 1, color = "white") +
+    coord_polar("y") +
+    geom_text(aes(label = label), position = position_stack(vjust = 0.5), size = 3) +
+    labs(
+      title = paste("Distribució de", var),
+      x = NULL, y = NULL, fill = NULL
+    ) +
+    theme_minimal(base_size = 10) +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      panel.border = element_blank()
+    )
+}
+
+plot_pie_no_labels <- function(df, var) {
+  df %>%
+    filter(!is.na(.data[[var]])) %>%
+    count(!!sym(var)) %>%
+    mutate(perc = round(100 * n / sum(n), 1),
+           label = paste0(perc, "%")) %>%
+    ggplot(aes(x = "", y = n, fill = !!sym(var))) +
+    geom_bar(stat = "identity", width = 1, color = "white") +
+    coord_polar("y") +
+    labs(
+      title = paste("Distribució de", var),
+      x = NULL, y = NULL, fill = NULL
+    ) +
+    theme_minimal(base_size = 10) +
+    theme(
+      plot.title = element_text(hjust = 0.5),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      panel.border = element_blank()
+    )
+}
+
+
+plot_barchart <- function(df, var, ord = NULL) {
+  df_plot <- df %>%
+    filter(!is.na(.data[[var]])) %>%
+    count(!!sym(var))
+  
+  # Si ord no és NULL, convertim la variable a factor amb aquest ordre
+  if (!is.null(ord)) {
+    df_plot[[var]] <- factor(df_plot[[var]], levels = ord)
+  }
+  
+  ggplot(df_plot, aes(x = reorder(!!sym(var), n), y = n)) +
+    geom_col(fill = "steelblue", alpha = 0.7) +
+    geom_text(aes(label = n), hjust = -0.1, size = 3) +
+    labs(
+      title = paste("Distribució de", var),
+      x = var,
+      y = "Comptatge"
+    ) +
+    theme_minimal() +
+    coord_flip() +
+    theme(
+      plot.title = element_text(hjust = 0.5)
+    )
+}
+
+
+plot_histogram <- function(df, var) {
+  df %>%
+    filter(!is.na(.data[[var]])) %>%
+    ggplot(aes(x = .data[[var]])) +
+    geom_histogram(fill = "steelblue", bins = 30, alpha = 0.7) +
+    labs(title = paste("Distribució de", var), x = var, y = "Comptatge") +
+    theme_minimal()
+}
+
+plot_distribution_by_cohort <- function(df, var, cohort = "Cohort") {
+  df %>%
+    filter(!is.na(.data[[var]]), !is.na(.data[[cohort]])) %>%
+    ggplot(aes(x = .data[[var]], fill = .data[[cohort]])) +
+    geom_density(alpha = 0.5) +
+    labs(title = paste("Distribució de", var, "per Cohort")) +
+    theme_minimal()
+}
+
+plot_visits_by_cohort <- function(df) {
+  df %>%
+    filter(!is.na(Cohort), !is.na(Total_visits)) %>%
+    count(Cohort, Total_visits) %>%
+    mutate(Total_visits = factor(Total_visits, levels = sort(unique(Total_visits)))) %>%
+    ggplot(aes(x = Total_visits, y = n)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ Cohort, scales = "free_x", ncol = 2) +  # escala lliure a l'eix X per cada faceta
+    labs(title = "Distribució de la quantitat de visites per Cohort", 
+         x = "Nombre de visites totals", 
+         y = "Freqüència") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 0, hjust = 1))
+}
+
+total_unique_patients <- function(df) {
+  total <- length(unique(df$Subj_id))
+  paste0("**Nombre total de pacients únics: ", total, "**")
+}
+
+
+plot_single_vs_multiple_visits <- function(df) {
+  # Agafem per pacient el Total_visits únic
+  visites_pacients <- df %>%
+    distinct(Subj_id, Total_visits) %>%
+    mutate(visits_group = ifelse(Total_visits == 1, "1 visit", "Multiple visits"))
+  
+  # Comptem pacients per grup
+  comptes <- visites_pacients %>%
+    count(visits_group)
+  
+  # Fem el barplot
+  ggplot(comptes, aes(x = visits_group, y = n, fill = visits_group)) +
+    geom_col(alpha = 0.8) +
+    geom_text(aes(label = n), vjust = -0.3) +
+    scale_fill_manual(values = c("1 visit" = "#4F81BD", "Multiple visits" = "#C0504D")) +
+    labs(title = "Pacients segons nombre de visites",
+         x = "Nombre de visites",
+         y = "Nombre de pacients",
+         fill = NULL) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = "none")
+}
+```
+
+## Resum missing values
+
+```{r}
+missing_data <- missing_summary(df_miss) %>%
+  arrange(desc(Perc_missing)) %>%
+  filter(Perc_missing > 0)  # opcional: només mostrar les variables amb missing
+
+ggplot(missing_data, aes(x = reorder(Variable, Perc_missing), y = Perc_missing)) +
+  geom_bar(stat = "identity", fill = "firebrick", alpha = 0.8) +
+  coord_flip() +
+  labs(
+    title = "Percentatge de valors perduts per variable",
+    x = "Variable",
+    y = "% Missings"
+  ) +
+  theme_minimal()
+```
+
+## Distribució per cohorts
+
+### Distribució de Cohorts
+
+```{r, results="asis"}
+plot_pie_labels(df, "Cohort")
+```
+
+### Distribució de la quantitat de visites per Cohort
+
+```{r, results="asis", fig.width=12, fig.height=8}
+plot_visits_by_cohort(df)
+```
+
+### Nombre total de pacients
+
+```{r, results="asis"}
+cat(total_unique_patients(df))
+```
+
+### Nombre total de pacients
+
+```{r, results="asis"}
+plot_single_vs_multiple_visits(df)
+```
+
+## Variables demogràfiques
+
+### Distribució de Gender
+
+```{r, results="asis"}
+plot_pie_labels(df, "Gender")
+```
+
+### Distribució de Ethnicity
+
+```{r, results="asis"}
+plot_pie_no_labels(df, "Ethnicity")
+```
+
+### Distribució de Race
+
+```{r, results="asis", fig.width=12, fig.height=8}
+print(plot_barchart(df, "Race"))
+```
+
+```{r, results="asis"}
+for (v in c( "Age_bl", "Age_at_visit", "Education")) {
+  cat(paste0("### Distribució de ", v, "\n\n"))
+  print(plot_histogram(df, v))
+  cat("\n\n---\n\n")
+}
+```
+
+## Variables clíniques i diagnòstic
+
+```{r, results="asis"}
+for (v in c("MMSE", "CDR")) {
+  cat(paste0("### Distribució de ", v, "\n\n"))
+  print(plot_histogram(df, v))
+  cat("\n\n---\n\n")
+}
+```
+
+```{r, results="asis", fig.width=12, fig.height=8}
+cat("### Distribució de DX_bl")
+ordre_dx_bl <- c("CN", "MCI", "Dementia", "Uncertain", "Other")
+print(plot_barchart(df, "DX_bl", ord = ordre_dx_bl))
+
+cat("### Distribució de DX")
+ordre_dx <- c("CN", "MCI", "Dementia", "Uncertain", "Other")
+print(plot_barchart(df, "DX", ord = ordre_dx))
+
+cat("### Distribució de DX_detail")
+ordre_dx_detail <- c("CN", "CN stable", "CN declining", "MCI", "EMCI", "LMCI", "SMC", "AD", "Non AD dementia", "Uncertain", "Other")
+print(plot_barchart(df, "DX_detail", ord = ordre_dx_detail))
+
+cat("### Distribució de DX_Dementia_type")
+ordre_dx_dem_type <- c("AD", "Non AD", "DLBD", "Vascular", "FTP", "PD")
+print(plot_barchart(df, "DX_Dementia_type", ord = ordre_dx_dem_type))
+```
+
+## Genètica
+
+### Distribució d'APOE
+
+```{r, results="asis"}
+plot_pie_no_labels(df, "APOE")
+```
+
+### Distribució d'E4_carrier
+
+```{r, results="asis"}
+plot_pie_labels(df, "E4_carrier")
+```
+
+### Distribució d'E4_allele
+
+```{r, results="asis"}
+plot_pie_labels(df, "E4_allele")
+```
+
+## Variables de neuroimatge
+
+```{r, results="asis"}
+neuro_vars <- c("MRI_hippo_vol_total", "Total_ICV", "Hippo_normalized_icv", "PET_amyloid_suvr",
+                "PET_amyloid_centiloid", "PET_FDG", "PET_tau_Bk12", "PET_tau_Bk34", "PET_tau_Bk56")
+
+valid_neuro_vars <- neuro_vars[sapply(neuro_vars, function(v) {
+  x <- df[[v]]
+  is.numeric(x) && sum(!is.na(x)) > 10 && length(unique(df$Cohort[!is.na(x)])) > 1
+})]
+
+if (length(valid_neuro_vars) > 0) {
+   for (v in valid_neuro_vars) {
+    cat(paste0("### Distribució de ", v, " per Cohort\n\n"))
+    print(plot_distribution_by_cohort(df, v))
+    cat("\n\n---\n\n")
+  }
+} else {
+  cat("Cap variable amb dades suficients per representar la distribució per cohort.")
+}
+```
+
+## Biomarcadors
+
+```{r, results="asis"}
+biomark_vars <- c("CSF_AB42", "CSF_pTau", "CSF_tTau", "CSF_NfL",
+                  "Plasma_NfL", "Plasma_pTau_Simoa", "Plasma_pTau_Roche")
+
+valid_biomark_vars <- biomark_vars[sapply(biomark_vars, function(v) {
+  x <- df[[v]]
+  is.numeric(x) && sum(!is.na(x)) > 10 && length(unique(df$Cohort[!is.na(x)])) > 1
+})]
+
+if (length(valid_biomark_vars) > 0) {
+  for (v in valid_biomark_vars) {
+    cat(paste0("### Distribució de ", v, " per Cohort\n\n"))
+    print(plot_distribution_by_cohort(df, v))
+    cat("\n\n---\n\n")
+  }
+} else {
+  cat("Cap variable amb dades suficients per representar la distribució per cohort.")
+}
+```

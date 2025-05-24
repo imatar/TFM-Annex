@@ -31,7 +31,7 @@ A4$DX_raw_A4[idx_na & A4$CDR_global_A4 >= 1 & A4$CDR_global_A4 <= 3] <- "Dementi
 vars_interes <- c(
   "BID",
   "TX_SubjInfo",
-  "VISCODE",
+  "VISCODE_group",
   "SUBSTUDY_SV",
   "AGE_AT_VISIT_A4",
   "PTGENDER_PtDemog",
@@ -66,7 +66,7 @@ A4_clean <- A4 %>%
 cols_A4 <- c(
   "BID" = "Subj_id",
   "TX_SubjInfo" = "Treatment",
-  "VISCODE" = "Visit",
+  "VISCODE_group" = "Visit",
   "SUBSTUDY_SV" = "Cohort_detail",
   "AGE_AT_VISIT_A4" = "Age_at_visit",
   "PTGENDER_PtDemog" = "Gender",

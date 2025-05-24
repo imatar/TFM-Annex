@@ -64,7 +64,7 @@ SUVR_tau_wide <- SUVR_tau_long %>%
   pivot_wider(names_from = variable_name, values_from = suvr_value)
 
 # ─────────────────────────────────────────────────────────────
-# Es calculen els Braak stages PET tau
+# Es calculen els Braak stages
 braak12_cols <- c("PVC_ctx.lh.entorhinal", "PVC_ctx.rh.entorhinal",
                   "PVC_Left.Hippocampus", "PVC_Right.Hippocampus")
 
@@ -80,7 +80,6 @@ braak56_cols <- c("PVC_ctx.lh.precuneus", "PVC_ctx.rh.precuneus",
                   "PVC_ctx.lh.superiortemporal", "PVC_ctx.rh.superiortemporal",
                   "PVC_ctx.lh.inferiorparietal", "PVC_ctx.rh.inferiorparietal")
 
-# Calcular valors mitjans per Braak stage
 PET_PetSurfer <- PET_PetSurfer %>%
   rowwise() %>%
   mutate(
