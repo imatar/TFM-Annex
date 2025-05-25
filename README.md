@@ -1,6 +1,6 @@
 ## TFM – Annex
 
-Aquest repositori inclou tots els scripts i fitxers annexos utilitzats en el Treball de Fi de Màster (TFM), relacionats amb la integració i l’harmonització, el control de qualitat i l’exploració de dades de les diferents cohorts.
+Aquest repositori inclou tots els scripts i fitxers annexos utilitzats en el Treball de Fi de Màster "Anàlisi Longitudinal de Dades Multimodals de la malaltia d’Alzheimer".
 
 ---
 
