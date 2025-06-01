@@ -25,6 +25,7 @@ df <- read.csv("path/dataset_final.csv")
 df[df == ""] <- NA
 names(df)
 
+# Missing values
 cols_miss <- c(
   "Subj_id", "Treatment", "Visit", "Total_visits",
   "Cohort", "Cohort_detail", "Age_at_visit", "Age_bl", "Gender", "Sex",
@@ -38,6 +39,13 @@ cols_miss <- c(
 )
 
 df_miss <- df[, cols_miss]
+
+# Pacients
+cols_pacients <- c("Subj_id", "Gender", "Sex", "Ethnicity", "Race",
+                   "Education", "Age_bl", "DX_bl", "APOE", "E4_carrier", 
+                   "E4_allele")
+
+df_pacients <- unique(df[, cols_pacients])
 
 # Resum missing values
 missing_summary <- function(df) {
@@ -232,27 +240,31 @@ plot_single_vs_multiple_visits(df)
 ### Distribució de Gender
 
 ```{r, results="asis"}
-plot_pie_labels(df, "Gender")
+plot_pie_labels(df_pacients, "Gender")
 ```
 
 ### Distribució de Ethnicity
 
 ```{r, results="asis"}
-plot_pie_no_labels(df, "Ethnicity")
+plot_pie_no_labels(df_pacients, "Ethnicity")
 ```
 
 ### Distribució de Race
 
 ```{r, results="asis", fig.width=12, fig.height=8}
-print(plot_barchart(df, "Race"))
+print(plot_barchart(df_pacients, "Race"))
 ```
 
 ```{r, results="asis"}
-for (v in c( "Age_bl", "Age_at_visit", "Education")) {
-  cat(paste0("### Distribució de ", v, "\n\n"))
-  print(plot_histogram(df, v))
-  cat("\n\n---\n\n")
-}
+cat("### Distribució de Age_bl")
+print(plot_histogram(df_pacients, "Age_bl"))
+
+cat("### Distribució de Age_at_visit")
+print(plot_histogram(df, "Age_at_visit"))
+
+cat("### Distribució de Education")
+print(plot_histogram(df_pacients, "Education"))
+
 ```
 
 ## Variables clíniques i diagnòstic
@@ -268,7 +280,7 @@ for (v in c("MMSE", "CDR")) {
 ```{r, results="asis", fig.width=12, fig.height=8}
 cat("### Distribució de DX_bl")
 ordre_dx_bl <- c("CN", "MCI", "Dementia", "Uncertain", "Other")
-print(plot_barchart(df, "DX_bl", ord = ordre_dx_bl))
+print(plot_barchart(df_pacients, "DX_bl", ord = ordre_dx_bl))
 
 cat("### Distribució de DX")
 ordre_dx <- c("CN", "MCI", "Dementia", "Uncertain", "Other")
@@ -288,19 +300,19 @@ print(plot_barchart(df, "DX_Dementia_type", ord = ordre_dx_dem_type))
 ### Distribució d'APOE
 
 ```{r, results="asis"}
-plot_pie_no_labels(df, "APOE")
+plot_pie_no_labels(df_pacients, "APOE")
 ```
 
 ### Distribució d'E4_carrier
 
 ```{r, results="asis"}
-plot_pie_labels(df, "E4_carrier")
+plot_pie_labels(df_pacients, "E4_carrier")
 ```
 
 ### Distribució d'E4_allele
 
 ```{r, results="asis"}
-plot_pie_labels(df, "E4_allele")
+plot_pie_labels(df_pacients, "E4_allele")
 ```
 
 ## Variables de neuroimatge
